@@ -110,34 +110,39 @@ public class SVGImageReaderSpi extends ImageReaderSpi {
                 while (pInput.read() != '<') {
                     // Skip over, until begin tag
                 }
+                
+                b = pInput.read();
 
                 // If this is not a comment, or the DOCTYPE declaration, the doc
                 // has no DOCTYPE and it can't be svg
-                if (pInput.read() != '!') {
-                    return false;
-                }
+                if (b == '!') {
+                	// This may be a DOCTYPE declaration
+                	
+                	 // There might be comments before the doctype, unfortunately...
+                    // If next is "--", this is a comment
+                    if ((b = pInput.read()) == '-' && pInput.read() == '-') {
+                        while (!(pInput.read() == '-' && pInput.read() == '-' && pInput.read() == '>')) {
+                            // Skip until end of comment
+                        }
+                    }
 
-                // There might be comments before the doctype, unfortunately...
-                // If next is "--", this is a comment
-                if ((b = pInput.read()) == '-' && pInput.read() == '-') {
-                    while (!(pInput.read() == '-' && pInput.read() == '-' && pInput.read() == '>')) {
-                        // Skip until end of comment
+                    // If we are lucky, this is DOCTYPE declaration
+                    if (b == 'D' && pInput.read() == 'O' && pInput.read() == 'C'
+                            && pInput.read() == 'T' && pInput.read() == 'Y' && pInput.read() == 'P'
+                            && pInput.read() == 'E') {
+                        docTypeFound = true;
+                        while (Character.isWhitespace((char) (b = pInput.read()))) {
+                            // Skip over WS
+                        }
+                        if (b == 's' && pInput.read() == 'v' && pInput.read() == 'g') {
+                            // This is SVG DOCTYPE
+                            return true;
+                        }
                     }
-                }
-
-                // If we are lucky, this is DOCTYPE declaration
-                if (b == 'D' && pInput.read() == 'O' && pInput.read() == 'C'
-                        && pInput.read() == 'T' && pInput.read() == 'Y' && pInput.read() == 'P'
-                        && pInput.read() == 'E') {
-                    docTypeFound = true;
-                    while (Character.isWhitespace((char) (b = pInput.read()))) {
-                        // Skip over WS
-                    }
-                    if (b == 's' && pInput.read() == 'v' && pInput.read() == 'g') {
-                        //System.out.println("It's svg!");
-                        return true;
-                    }
-                }
+                } else if (b == 's' && pInput.read() == 'v' && pInput.read() == 'g' && Character.isWhitespace((char)pInput.read())) {
+                    // This is SVG TAG
+                    return true;
+                }                
             }
             return false;
         }
